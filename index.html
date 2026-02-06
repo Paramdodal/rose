@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Eternal Map</title>
+    <style>
+        :root {
+            --gold: #d4af37;
+            --parchment: #f4e4bc;
+            --rose-red: #e63946;
+        }
+
+        body {
+            margin: 0; background: #0a0a0a;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; font-family: 'Crimson Text', serif; overflow: hidden;
+        }
+
+        /* The Map Frame */
+        #game-wrapper {
+            position: relative;
+            box-shadow: 0 0 100px rgba(230, 57, 70, 0.2);
+            border: 15px solid #2c1e12;
+            border-image: linear-gradient(to bottom, #4b3621, #2c1e12) 1;
+        }
+
+        #game-container {
+            position: relative;
+            width: 1000px; height: 667px;
+            background-image: url('your-map.png');
+            background-size: cover;
+            cursor: url('https://cur.cursors-4u.net/symbols/sym-9/sym833.cur'), auto;
+        }
+
+        /* Invisible but Glowing Markers */
+        .marker {
+            position: absolute; width: 90px; height: 90px;
+            cursor: pointer; border-radius: 50%; z-index: 10;
+            transition: 0.5s;
+        }
+        
+        .marker:hover { box-shadow: 0 0 20px var(--gold); background: rgba(212, 175, 55, 0.1); }
+
+        #loc-0 { bottom: 8%; right: 26%; } 
+        #loc-1 { top: 23%; left: 14%; }    
+        #loc-2 { bottom: 23%; left: 14%; }  
+        #loc-3 { top: 8%; left: 44%; }     
+        #loc-4 { top: 28%; right: 16%; }    
+
+        /* Romantic Modal */
+        #quiz-overlay {
+            display: none; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(20, 15, 10, 0.95);
+            padding: 40px; border: 2px solid var(--gold);
+            border-radius: 0px; text-align: center; width: 400px;
+            z-index: 100; color: var(--parchment);
+            box-shadow: 0 0 50px black;
+        }
+
+        .story-header { font-style: italic; color: var(--gold); margin-bottom: 20px; font-size: 1.2rem; }
+
+        .option-btn {
+            display: block; width: 100%; margin: 12px 0;
+            padding: 15px; background: transparent;
+            color: var(--parchment); border: 1px solid var(--gold);
+            cursor: pointer; transition: 0.4s; font-family: inherit;
+        }
+
+        .option-btn:hover { background: var(--gold); color: black; }
+
+        /* Final Rose Animation */
+        #rose-page {
+            display: none; position: fixed; inset: 0;
+            background: #000; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 1000;
+        }
+
+        .rose-box { position: relative; font-size: 150px; animation: bloom 4s infinite alternate; }
+        
+        @keyframes bloom {
+            0% { transform: scale(0.9); filter: drop-shadow(0 0 10px red); }
+            100% { transform: scale(1.1); filter: drop-shadow(0 0 40px #ff0000); }
+        }
+
+        .heart {
+            position: absolute; color: var(--rose-red);
+            font-size: 20px; pointer-events: none;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        #final-text {
+            color: var(--gold); font-family: 'Brush Script MT', cursive;
+            font-size: 3.5rem; margin-top: 20px; text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-wrapper">
+    <div id="game-container">
+        <div class="marker" id="loc-0" onclick="checkLocation(0)"></div>
+        <div class="marker" id="loc-1" onclick="checkLocation(1)"></div>
+        <div class="marker" id="loc-2" onclick="checkLocation(2)"></div>
+        <div class="marker" id="loc-3" onclick="checkLocation(3)"></div>
+        <div class="marker" id="loc-4" onclick="checkLocation(4)"></div>
+
+        <div id="quiz-overlay">
+            <div class="story-header" id="story-text">Chapter I: The Beginning</div>
+            <h2 id="question-text" style="font-weight: normal;">Question here?</h2>
+            <div id="options-container"></div>
+        </div>
+    </div>
+</div>
+
+<div id="rose-page">
+    <div class="rose-box">🌹</div>
+    <div id="final-text"></div>
+    <p style="color: white; opacity: 0.7; letter-spacing: 2px;">Happy Rose Day Pillu</p>
+</div>
+
+<script>
+    const chapters = [
+        "Chapter I: The First Spark",
+        "Chapter II: A Cinematic Dream",
+        "Chapter III: A Piece of My Heart",
+        "Chapter IV: Painted Skies",
+        "Chapter V: Our Rhythm"
+    ];
+
+    const questions = [
+        "In the quiet of our first talk, where did the words find us?",
+        "Under the dim lights of the theater, which story did we share first?",
+        "I wanted to give you something of mine... what did you wrap yourself in?",
+        "As the sun dipped below the horizon, what was our view?",
+        "When the music played, which song became the soundtrack of our soul?"
+    ];
+
+    const options = [
+        ["At Cafe", "At Farewell", "At College", "Home"],
+        ["RRKPK", "Dilwale", "Pathaan", "Jab We Met"],
+        ["Hoodie", "Watch", "Ring", "Perfume"],
+        ["Walking", "Boating", "Sitting", "Driving"],
+        ["Snowman", "Perfect", "Tera Ban Jaunga", "Shayad"]
+    ];
+    
+    const answers = [1, 0, 0, 1, 0]; // Farewell, RRKPK, Hoodie, Sitting, Perfect
+
+    let currentStep = 0;
+
+    function checkLocation(locId) {
+        if (locId === currentStep) {
+            showQuiz(currentStep);
+        } else {
+            alert("The story hasn't reached this chapter yet. Follow the light...");
+        }
+    }
+
+    function showQuiz(step) {
+        const overlay = document.getElementById('quiz-overlay');
+        document.getElementById('story-text').innerText = chapters[step];
+        document.getElementById('question-text').innerText = questions[step];
+        const optCont = document.getElementById('options-container');
+        optCont.innerHTML = '';
+
+        options[step].forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerText = opt;
+            btn.onclick = () => verifyAnswer(index, step);
+            optCont.appendChild(btn);
+        });
+        overlay.style.display = 'block';
+    }
+
+    function verifyAnswer(selectedIndex, step) {
+        if (selectedIndex === answers[step]) {
+            document.getElementById('quiz-overlay').style.display = 'none';
+            currentStep++;
+            if (currentStep >= 5) setTimeout(showFinalRose, 500);
+        } else {
+            alert("Memories can be tricky... try again, my love.");
+        }
+    }
+
+    function showFinalRose() {
+        document.getElementById('game-wrapper').style.display = 'none';
+        document.getElementById('rose-page').style.display = 'flex';
+        
+        // Typewriter Effect
+        let i = 0;
+        const text = "Every path led me to you.";
+        function type() {
+            if (i < text.length) {
+                document.getElementById("final-text").innerHTML += text.charAt(i);
+                i++; setTimeout(type, 100);
+            }
+        }
+        type();
+
+        // Heart Rain
+        setInterval(createHeart, 300);
+    }
+
+    function createHeart() {
+        const heart = document.createElement('div');
+        heart.classList.add('heart');
+        heart.innerHTML = '❤️';
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.animationDuration = Math.random() * 3 + 2 + 's';
+        document.getElementById('rose-page').appendChild(heart);
+        setTimeout(() => heart.remove(), 5000);
+    }
+</script>
+
+</body>
+</html>
